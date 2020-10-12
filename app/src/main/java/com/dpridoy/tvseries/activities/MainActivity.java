@@ -1,9 +1,11 @@
 package com.dpridoy.tvseries.activities;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -25,6 +27,8 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding activityMainBinding;
     private List<TVShows> tvShows=new ArrayList<>();
     private TVShowsAdapter tvShowsAdapter;
+    private int currentPage=1;
+    private int totalAvailablePages=1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,23 +42,52 @@ public class MainActivity extends AppCompatActivity {
         viewModel=new ViewModelProvider(this).get(MostPopularTVShowsViewModel.class);
         tvShowsAdapter=new TVShowsAdapter(tvShows);
         activityMainBinding.tvShowsRecyclerView.setAdapter(tvShowsAdapter);
+        activityMainBinding.tvShowsRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                if (!activityMainBinding.tvShowsRecyclerView.canScrollVertically(1)){
+                    if (currentPage<=totalAvailablePages){
+                        currentPage+=1;
+                        getMostPopularTVShows();
+                    }
+                }
+            }
+        });
         getMostPopularTVShows();
     }
 
     private void getMostPopularTVShows(){
-        activityMainBinding.setIsLoading(true);
-        viewModel.getMostPopularTVShows(0).observe(this, new Observer<TVShowsResponses>() {
+        toggleLoading();
+        viewModel.getMostPopularTVShows(currentPage).observe(this, new Observer<TVShowsResponses>() {
             @Override
             public void onChanged(TVShowsResponses tvShowsResponses) {
-                activityMainBinding.setIsLoading(false);
+                toggleLoading();
                 if (tvShowsResponses != null){
+                    totalAvailablePages=tvShowsResponses.getPages();
                     if (tvShowsResponses.getTvShows()!=null){
+                        int oldCount = tvShows.size();
                         tvShows.addAll(tvShowsResponses.getTvShows());
-                        tvShowsAdapter.notifyDataSetChanged();
+                        tvShowsAdapter.notifyItemRangeInserted(oldCount,tvShows.size());
                     }
                 }
-                Log.e("Pages: ",tvShowsResponses.getPages().toString());
             }
         });
+    }
+
+    private void toggleLoading(){
+        if (currentPage==1){
+            if (activityMainBinding.getIsLoading()!=null && activityMainBinding.getIsLoading()){
+                activityMainBinding.setIsLoading(false);
+            }else {
+                activityMainBinding.setIsLoading(true);
+            }
+        }else {
+            if (activityMainBinding.getIsLoadingMore()!=null && activityMainBinding.getIsLoadingMore()){
+                activityMainBinding.setIsLoadingMore(false);
+            }else {
+                activityMainBinding.setIsLoadingMore(true);
+            }
+        }
     }
 }
