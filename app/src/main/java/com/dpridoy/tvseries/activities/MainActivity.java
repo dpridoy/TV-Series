@@ -96,12 +96,7 @@ public class MainActivity extends AppCompatActivity implements TVShowsListener {
     @Override
     public void onTVShowCLicked(TVShows tvShows) {
         Intent intent=new Intent(getApplicationContext(),TvShowDetailsActivity.class);
-        intent.putExtra("id", tvShows.getId());
-        intent.putExtra("name", tvShows.getName());
-        intent.putExtra("startDate", tvShows.getStartDate());
-        intent.putExtra("country",tvShows.getCountry());
-        intent.putExtra("network",tvShows.getNetwork());
-        intent.putExtra("status", tvShows.getStatus());
+        intent.putExtra("tvShow",tvShows);
         startActivity(intent);
     }
 }
