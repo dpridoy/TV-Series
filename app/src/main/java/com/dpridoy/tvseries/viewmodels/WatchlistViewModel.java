@@ -10,6 +10,7 @@ import com.dpridoy.tvseries.models.TVShows;
 
 import java.util.List;
 
+import io.reactivex.Completable;
 import io.reactivex.Flowable;
 
 public class WatchlistViewModel extends AndroidViewModel {
@@ -24,5 +25,9 @@ public class WatchlistViewModel extends AndroidViewModel {
 
     public Flowable<List<TVShows>> loadWatchlist(){
         return tvShowsDatabase.tvShowDao().getWatchlist();
+    }
+
+    public Completable removeTVShowFromWatchlist(TVShows tvShows){
+        return tvShowsDatabase.tvShowDao().removeFromWatchlist(tvShows);
     }
 }

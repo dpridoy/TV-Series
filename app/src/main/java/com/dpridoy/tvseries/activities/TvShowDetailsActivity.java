@@ -28,6 +28,7 @@ import com.dpridoy.tvseries.databinding.ActivityTvShowDetailsBinding;
 import com.dpridoy.tvseries.databinding.LayoutEpisodesBottomSheetBinding;
 import com.dpridoy.tvseries.models.TVShows;
 import com.dpridoy.tvseries.responses.TVShowDetailsResponse;
+import com.dpridoy.tvseries.utils.TempDataHolder;
 import com.dpridoy.tvseries.viewmodels.TVShowsDetailsViewModel;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -47,6 +48,7 @@ public class TvShowDetailsActivity extends AppCompatActivity {
     private BottomSheetDialog episodesBottomSheetDialog;
     private LayoutEpisodesBottomSheetBinding layoutEpisodesBottomSheetBinding;
     private TVShows tvShows;
+    private Boolean isTVShowAvailableInWatchlist = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,7 +62,19 @@ public class TvShowDetailsActivity extends AppCompatActivity {
         tvShowsDetailsViewModel=new ViewModelProvider(this).get(TVShowsDetailsViewModel.class);
         activityTvShowDetailsBinding.imageBack.setOnClickListener(v -> onBackPressed());
         tvShows = (TVShows)getIntent().getSerializableExtra("tvShow");
+        checkTVShowInWatchlist();
         getTVShowDetails();
+    }
+
+    private void checkTVShowInWatchlist(){
+        CompositeDisposable compositeDisposable = new CompositeDisposable();
+        compositeDisposable.add(tvShowsDetailsViewModel.getTVShowFromWatchlist(String.valueOf(tvShows.getId()))
+        .subscribeOn(Schedulers.computation())
+        .observeOn(AndroidSchedulers.mainThread())
+        .subscribe(tvShows->{
+            isTVShowAvailableInWatchlist = true;
+            activityTvShowDetailsBinding.imageWatchlist.setImageResource(R.drawable.ic_added);
+        }));
     }
 
     private void getTVShowDetails(){
@@ -172,13 +186,30 @@ public class TvShowDetailsActivity extends AppCompatActivity {
                     activityTvShowDetailsBinding.imageWatchlist.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            new CompositeDisposable().add(tvShowsDetailsViewModel.addToWatchlist(tvShows)
-                            .subscribeOn(Schedulers.io())
-                            .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe(()->{
-                                activityTvShowDetailsBinding.imageWatchlist.setImageResource(R.drawable.ic_added);
-                                Toast.makeText(getApplicationContext(),"Added to watchlist",Toast.LENGTH_SHORT).show();
-                            }));
+                            CompositeDisposable compositeDisposable=new CompositeDisposable();
+                            if (isTVShowAvailableInWatchlist){
+                                compositeDisposable.add(tvShowsDetailsViewModel.removeTVShowFromWatchlist(tvShows)
+                                .subscribeOn(Schedulers.computation())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe(()->{
+                                    isTVShowAvailableInWatchlist = false;
+                                    TempDataHolder.IS_WATCHLIST_UPDATED = true;
+                                    activityTvShowDetailsBinding.imageWatchlist.setImageResource(R.drawable.ic_watchlist);
+                                    Toast.makeText(getApplicationContext(),"Removed from watchlist",Toast.LENGTH_SHORT).show();
+                                    compositeDisposable.dispose();
+                                }));
+                            }else {
+                                compositeDisposable.add(tvShowsDetailsViewModel.addToWatchlist(tvShows)
+                                        .subscribeOn(Schedulers.io())
+                                        .observeOn(AndroidSchedulers.mainThread())
+                                        .subscribe(()->{
+                                            TempDataHolder.IS_WATCHLIST_UPDATED = true;
+                                            activityTvShowDetailsBinding.imageWatchlist.setImageResource(R.drawable.ic_added);
+                                            Toast.makeText(getApplicationContext(),"Added to watchlist",Toast.LENGTH_SHORT).show();
+                                            compositeDisposable.dispose();
+                                        }));
+                            }
+
                         }
                     });
                     activityTvShowDetailsBinding.imageWatchlist.setVisibility(View.VISIBLE);
