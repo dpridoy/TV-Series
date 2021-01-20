@@ -189,15 +189,15 @@ public class TvShowDetailsActivity extends AppCompatActivity {
                             CompositeDisposable compositeDisposable=new CompositeDisposable();
                             if (isTVShowAvailableInWatchlist){
                                 compositeDisposable.add(tvShowsDetailsViewModel.removeTVShowFromWatchlist(tvShows)
-                                .subscribeOn(Schedulers.computation())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(()->{
-                                    isTVShowAvailableInWatchlist = false;
-                                    TempDataHolder.IS_WATCHLIST_UPDATED = true;
-                                    activityTvShowDetailsBinding.imageWatchlist.setImageResource(R.drawable.ic_watchlist);
-                                    Toast.makeText(getApplicationContext(),"Removed from watchlist",Toast.LENGTH_SHORT).show();
-                                    compositeDisposable.dispose();
-                                }));
+                                        .subscribeOn(Schedulers.computation())
+                                        .observeOn(AndroidSchedulers.mainThread())
+                                        .subscribe(()->{
+                                            isTVShowAvailableInWatchlist = false;
+                                            TempDataHolder.IS_WATCHLIST_UPDATED = true;
+                                            activityTvShowDetailsBinding.imageWatchlist.setImageResource(R.drawable.ic_watchlist);
+                                            Toast.makeText(getApplicationContext(),"Removed from watchlist",Toast.LENGTH_SHORT).show();
+                                            compositeDisposable.dispose();
+                                        }));
                             }else {
                                 compositeDisposable.add(tvShowsDetailsViewModel.addToWatchlist(tvShows)
                                         .subscribeOn(Schedulers.io())
